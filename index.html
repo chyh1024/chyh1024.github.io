@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Project 1 HsiangYuan Huang</title>
+	
+	<script src="../d3.js"></script>
+	
+	<style>
+    	text { 
+			font-family: Arial; 
+			font-size: 15px;
+		}
+		.axis path, .axis line {
+			fill: none;
+			stroke: black;
+			shape-rendering: crispEdges;
+		}
+		.tick text {
+			fill: black;
+			font-size: 11px;
+		}
+
+		line {
+			stroke: black;
+		}
+		rect {
+			fill: steelblue;
+		}
+		.compass {
+            fill: #fff;
+            stroke: #000;
+            stroke-width: 1;
+			}
+		.button {
+            fill: #225EA8;
+            stroke: #0C2C84;
+            stroke-width: 0.5;
+            stroke-miterlimit:6;
+            stroke-linecap: round;
+        }
+        .button:hover {
+            stroke-width: 1;
+        }
+        .plus-minus {
+            fill: #fff;
+            pointer-events: none;
+        }
+		circle {
+			stroke: black;
+            stroke-width: 0.5;
+		}
+		rect:hover {
+			fill: yellow;
+			}
+		circle:hover {
+			fill: yellow;
+			}
+		#tooltip {
+				position: absolute;
+				width: 200px;
+				height: auto;
+				padding: 10px;
+				background-color: white;
+				-webkit-border-radius: 10px;
+				-moz-border-radius: 10px;
+				border-radius: 10px;
+				-webkit-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+				-moz-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+				box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+				pointer-events: none;
+			}
+			
+		#tooltip.hidden {
+				display: none;
+			}
+			
+		#tooltip p {
+				margin: 0;
+				font-family: sans-serif;
+				font-size: 16px;
+				line-height: 20px;
+			}
+	</style>
+</head>
+<body>
+	<p> 
+			<font size="+4" color="red">
+				Project 1 HsiangYuan Huang
+			</font>
+			
+	</p>
+	<div id="tooltip" class="hidden">
+			<p><strong>Important Label Heading</strong></p>
+			<p><span id="value">100</span>%</p>
+		</div>
+	
+	<div>
+	<svg id="main" width="2000" height="1000" viewBox="0 0 800 400" >
+		
+		<g id="matrix-group" transform="matrix(1 0 0 1 100 50)">
+		</g>
+		<circle cx="25" cy="25" r="21" fill="black" opacity="0.75"/>
+		<path class="button" onclick="pan(0, -25)" d="M25 5 l6 10 a20 35 0 0 0 -12 0z" />
+		<path class="button" onclick="pan(-25, 0)" d="M5 25 l10 -6 a35 20 0 0 0 0 12z" />
+		<path class="button" onclick="pan(0,25)" d="M25 45 l6 -10 a20, 35 0 0,1 -12,0z" />
+		<path class="button" onclick="pan(25, 0)" d="M45 25 l-10 -6 a35 20 0 0 1 0 12z" />
+    
+		<circle class="compass" cx="25" cy="25" r="10"/>
+		<circle class="button"  cx="25" cy="20.5" r="4" onclick="zoom(0.8)"/>
+		<circle class="button"  cx="25" cy="29.5" r="4" onclick="zoom(1.25)"/>
+
+		<rect class="plus-minus" x="23" y="20" width="4" height="1"/>
+		<rect class="plus-minus" x="23" y="29" width="4" height="1"/>
+		<rect class="plus-minus" x="24.5" y="27.5" width="1" height="4"/>
+		<text x="500" y="20" font-size="1px">Red dot = pump</text>
+		<text x="500" y="40">Grean dot = deaths</text>
+		<text x="150" y="88"></text>
+		<text x="50" y="220"></text>
+		<text x="100" y="220"></text>
+		<text x="150" y="220"></text>
+
+		<text x="100" y="30"></text>
+
+	</svg>
+
+	
+	<script>
+		var scalemultiple = 1.3;
+		var scale = 10 * scalemultiple;
+		var mapsize = scale * 20;
+		
+		var transformMatrix = [1, 0, 0, 1, 100, 50];
+        var svg = document.getElementById('main');
+        var viewbox = svg.getAttributeNS(null, "viewBox").split(" ");
+        var centerX = parseFloat(viewbox[2]) / 2;
+        var centerY = parseFloat(viewbox[3]) / 2;
+        var matrixGroup = svg.getElementById("matrix-group");
+		
+		var gender;
+		var age;
+		var ndata;
+		
+		function pan(dx, dy) {
+            transformMatrix[4] += dx;
+            transformMatrix[5] += dy;
+            setMatrix();
+        }
+
+        function zoom(scale) {
+            for (var i = 0; i < 6; i++) {
+                transformMatrix[i] *= scale;
+            }
+
+            transformMatrix[4] += (1 - scale) * centerX;
+            transformMatrix[5] += (1 - scale) * centerY;
+            setMatrix();
+        }
+
+        function setMatrix() {
+            var newMatrix = "matrix(" +  transformMatrix.join(' ') + ")";
+            matrixGroup.setAttributeNS(null, "transform", newMatrix);
+        }
+/*
+		d3.csv('deaths_age_sex.csv', function(dloc) {
+			
+			//console.log(dloc)
+			
+			for(var a = 0, len = dloc.length; a < len; a++){
+				
+				
+				
+					
+				if (dloc[a] === undefined) {
+					break;
+				}
+				else {
+					d3.select("svg").select('g')
+					.append('circle')
+				
+					.attr('cx', dloc[a].x*scale)
+					.attr('cy', mapsize -dloc[a].y*scale)
+					.attr('r', 2*scalemultiple)
+					.attr('style',"fill: green")
+					
+				}    
+				
+			}
+			
+		});
+*/		
+		function drawdots(data) {
+			d3.select('#main').select('g').selectAll("circle")
+				.data(data)
+				.enter()
+				.append("circle")
+				.attr("cx", function(d, i) {
+			   		return d.x*scale;
+			   })
+			   .attr("cy", function(d, i) {
+			   		return mapsize -d.y*scale;
+			   })
+				.attr('r', 2*scalemultiple)
+				.attr('fill','green')
+				.append("title")
+			    .text(function(d) {
+					
+					switch (d.gender) {
+						case '0': gender='Male'; break;
+						case '1': gender='Female'; break;
+						}
+					switch (d.age) {
+						case '0': age='0-10'; break;
+						case '1': age='11-20'; break;
+						case '2': age='21-40'; break;
+						case '3': age='41-60'; break;
+						case '4': age='61-80'; break;
+						case '5': age='> 80'; break;
+						}	
+			   		return gender + ' ' + age;
+				});
+		}
+		
+		d3.csv('deaths_age_sex.csv', function(dloc) {
+				ndata = dloc;
+				drawdots(dloc);
+				
+		});
+
+		d3.csv('pumps.csv', function(pump) {
+			
+			//console.log(dloc)
+			
+			for(var a = 0, len = pump.length; a < len; a++){
+				
+				
+				
+					
+				if (pump[a] === undefined) {
+					break;
+				}
+				else {
+					d3.select("svg").select('g')
+					.append('circle')
+				
+					.attr('cx', pump[a].x*scale)
+					.attr('cy', mapsize - pump[a].y*scale)
+					.attr('r', 3*scalemultiple)
+					.attr('style',"fill: red ");
+					
+					
+				}    
+				
+			}
+		
+		});
+/*				
+		d3.csv('pumps.csv', function(pump) {
+			console.log(pump);
+			d3.select('g').selectAll("circle")
+				.data(pump)
+				.enter()
+				.append("circle")
+				.attr("cx", function(d, i) {
+			   		return pump[i].x*scale;
+			   })
+			   .attr("cy", function(d, i) {
+			   		return mapsize -pump[i].y*scale;
+			   })
+				.attr('r', 2)
+				.attr('fill','red')
+				.append("title")
+			    .text(function(d) {
+			   		return d.x;
+			    });
+				
+				.on("mouseover", function(d) {
+			   		d3.select(this)
+			   			.attr("fill", "orange");
+				})
+				.on("mouseout", function(d) {
+				   d3.select(this)
+						.attr("fill", "red");
+				});
+				
+		});
+*/		
+		d3.json('streets.json', function(data) {
+			
+			for(var a = 0, len = data.length; a < len; a++){
+				
+				
+				for (var b=0, len2=data[a].length; b < len2; b++) {
+					var c=b+1;
+					//console.log(data[a][b]);
+					//console.log(data[a][c]); 
+					
+					if (data[a][c] === undefined) {
+					break;
+					}
+					else {
+						d3.select("svg").select('g')
+						
+						.append('line')
+						.attr('x1', data[a][b].x*scale)
+						.attr('y1', mapsize -data[a][b].y*scale)
+						.attr('x2', data[a][c].x*scale)
+						.attr('y2', mapsize -data[a][c].y*scale);
+						
+						
+					}
+				}    
+				
+			}
+		});
+		
+	</script>
+	</div>
+	
+	<div>
+	<svg id="s" width="1000" height="300" >
+		<text id='label' x='20' y='20'>The number of deaths per day</text>
+		<g transform="translate(40,40)">
+		</g>
+		
+	</svg>
+
+	
+	<script>
+		
+		d3.csv('deathdays.csv', function(line) {
+			//console.log(str);
+			var CHART_HEIGHT = 150;
+			var CHART_WIDTH = 630;
+			var padding = 15;
+			var xScale = d3.scaleTime();
+			var yScale = d3.scaleLinear();
+
+			//xScale.domain(d3.extent(bar, function(d) { return d.date; })).range([0, CHART_WIDTH]);
+			xScale
+				.domain([new Date('2019-08-19'),new Date('2019-09-29')])
+				.range([-15, 615]).nice();
+			
+			yScale
+				.domain([0, 150])
+				.range([150,0]);
+
+			var g = d3.select('#s').select('g');
+
+
+			var xAxis = d3.axisBottom(xScale);
+    		//.scale(xScale)
+    		//.orient('bottom')
+    		//.tickFormat(function(d) { return "" + d; })
+
+			var yAxis = d3.axisLeft(yScale);
+    		//.scale(yScale)
+    		//.orient('left');
+
+
+			g.append('g')
+    		.attr('class', 'axis')
+    		.attr('transform', 'translate(0,' + CHART_HEIGHT + ')')
+    		.call(xAxis);
+
+			g.append('g')
+    		.attr('class', 'axis')
+    		.call(yAxis);
+			//console.log(line);
+			for (var a=0, len=line.length; a <= len;) {
+					var b=a+1;
+					//console.log(len);
+					//console.log(data[a][c]); 
+					d3.select("#s").select('g')
+						.append('circle')
+				
+						.attr('cx', a * 15)
+						.attr('cy', CHART_HEIGHT - line[a].deaths)
+						.attr('r', 5)
+						.attr('style', 'stroke: steelblue')
+						.append("title")
+						.text('Date:'+line[a].date+'  '+'Deaths:'+line[a].deaths)
+						
+					if (line[b]  === undefined) {
+					break;
+					}
+					else {
+					
+						d3.select("#s").select('g')
+						.append('line')
+				
+						.attr('x1', a * 15)
+						.attr('y1', CHART_HEIGHT - line[a].deaths)
+						.attr('x2', (a+1) * 15)
+						.attr('y2', CHART_HEIGHT - line[b].deaths)
+						.attr('style', 'stroke: steelblue');
+						
+					}
+					a++;
+					//console.log(a);
+			}
+		/*
+			d3.select("#s").select('g').selectAll('circle')
+				.on('mouseover', function(d, i){
+					//console.log(line[i].end);
+					var nndata=[];
+					for(var a = line[i].str, len = line[i].end; a < len; a++){	
+							//console.log(line[i].str);
+							nndata.push(ndata[a]);
+						}
+					//console.log(nndata);
+						drawdots(nndata);
+					})
+					*/
+		});
+		
+
+	</script>
+		
+	</div>
+	
+	
+	<div>
+	<svg id="second" width="600" height="300" viewBox="0 0 600 300">
+		<text id='label' x='20' y='20'>Total deaths for ages</text>
+		<g transform="translate(40,40)">
+		</g>
+		
+		<line x1="40" x2="300" y1="240" y2="240" stroke="black"/>
+		<text x="41" y="260">0 - 10</text>
+		<text x="80" y="275">11 - 20</text>
+		<text x="121" y="260">21 - 40</text>
+		<text x="160" y="275">41 - 60</text>
+		<text x="201" y="260">61 - 80</text>
+		<text x="240" y="275">>80</text>
+		<text x="45" y="115" fill="black">143</text>
+		<text x="85" y="207" fill="black">48</text>
+		<text x="125" y="197" fill="black">58</text>
+		<text x="165" y="198" fill="black">57</text>
+		<text x="205" y="165" fill="black">91</text>
+		<text x="245" y="85" fill="black">174</text>
+
+		
+	</svg>
+
+	
+	<script>
+		
+		d3.csv('deaths_age_sex.csv', function(bar) {
+			
+			var CHART_HEIGHT = 200;
+			var CHART_WIDTH = 250;
+			var xScale = d3.scaleLinear();
+			var yScale = d3.scaleLinear();
+
+			//xScale.domain(d3.extent(bar, function(d) { return d.date; })).range([0, CHART_WIDTH]);
+			//xScale.domain([0, 10, 20, 40, 60, 80]).range([0, 20]);
+			
+			yScale.domain([0, 200]).range([CHART_HEIGHT,0]);
+
+			var g = d3.select('#second').select('g');
+
+
+			var xAxis = d3.axisBottom(xScale);
+    		//.scale(xScale)
+    		//.orient('bottom')
+    		//.tickFormat(function(d) { return "" + d; })
+
+			var yAxis = d3.axisLeft(yScale);
+    		//.scale(yScale)
+    		//.orient('left');
+
+			/*
+			g.append('g')
+    		.attr('class', 'axis')
+    		.attr('transform', 'translate(0,' + CHART_HEIGHT + ')')
+    		.call(xAxis);
+			*/
+			g.append('g')
+    		.attr('class', 'axis')
+    		.call(yAxis);
+			
+			var expensesByAge = d3.nest()
+				.key(function(d) { return d.age; })
+				.entries(bar);
+			var expensesCount = d3.nest()
+				.key(function(d) { return d.age; })
+				.rollup(function(v) { return v.length; })
+				.entries(bar);
+			var TotalByAge = expensesCount.sort(function(x, y){
+				return d3.ascending(x.key, y.key);
+			});	
+		
+			console.log(TotalByAge);
+			for(var a = 0, len = TotalByAge.length; a < len; a++){
+				var chart_height = 200;
+				
+				
+				
+					
+				
+				d3.select("#second").select('g')
+				.append('rect')
+				
+				.attr("height", TotalByAge[a].value)
+				.attr('width', 40)
+				.attr('x', a*40)
+				.attr("y", chart_height - TotalByAge[a].value);
+					
+				   
+				
+			}
+		});
+		
+		
+	</script>
+	
+	</div>
+	
+	<div>
+	<svg id="four" width="600" height="300" viewBox="0 0 600 300">
+		<text id='label' x='20' y='20'>Total deaths of gender</text>
+		<g transform="translate(40,40)">
+		</g>
+		
+		<line x1= "40" y1="40" x2="40" y2="190" stroke="black"></line>
+		<text x="160" y="65" fill="black">M 284</text>
+		<text x="160" y="145" fill="black">F 287</text>
+
+		
+	</svg>
+
+	
+	<script>
+		
+		d3.csv('deaths_age_sex.csv', function(bar) {
+			
+			var CHART_HEIGHT = 150;
+			var CHART_WIDTH = 400;
+			var xScale = d3.scaleLinear();
+			var yScale = d3.scaleLinear();
+
+			//xScale.domain(d3.extent(bar, function(d) { return d.date; })).range([0, CHART_WIDTH]);
+			xScale.domain([0, 300]).range([0, 300]);
+			
+			//yScale.domain([0, 200]).range([CHART_HEIGHT,0]);
+
+			var g = d3.select('#four').select('g');
+
+
+			var xAxis = d3.axisBottom(xScale);
+    		//.scale(xScale)
+    		//.orient('bottom')
+    		//.tickFormat(function(d) { return "" + d; })
+
+			var yAxis = d3.axisLeft(yScale);
+    		//.scale(yScale)
+    		//.orient('left');
+
+			
+			g.append('g')
+    		.attr('class', 'axis')
+    		.attr('transform', 'translate(0,' + CHART_HEIGHT + ')')
+    		.call(xAxis);
+			/*
+			g.append('g')
+    		.attr('class', 'axis')
+    		.call(yAxis);
+			*/
+			var groupByG = d3.nest()
+				.key(function(d) { return d.gender
+; })
+				.entries(bar);
+			var CountByG = d3.nest()
+				.key(function(d) { return d.gender
+; })
+				.rollup(function(v) { return v.length; })
+				.entries(bar);
+			var TotalByG = CountByG.sort(function(x, y){
+				return d3.ascending(x.key, y.key);
+			});	
+		
+			console.log(TotalByG);
+			for(var a = 0, len = TotalByG.length; a < len; a++){
+				var chart_height = 200;
+				
+				
+				
+					
+				
+				d3.select("#four").select('g')
+				.append('rect')
+				
+				.attr("height", 40)
+				.attr('width', TotalByG[a].value)
+				.attr('x', 0)
+				.attr("y", a*80);
+					
+				   
+				
+			}
+		});
+		
+		
+	</script>
+	
+	</div>
+</body>
+
+
+</html>
